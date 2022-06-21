@@ -5,9 +5,10 @@ const json = require('koa-json')
 const onerror = require('koa-onerror')
 const bodyparser = require('koa-bodyparser')
 const logger = require('koa-logger')
-const log4js = require('./utils/log4j.js')
 const users = require('./routes/users')
 const router = require('koa-router')()
+const koajwt = require('koa-jwt')
+const util = require('./utils/util.js')
 // error handler
 onerror(app)
 require('./config/bd.js')
@@ -26,10 +27,18 @@ app.use(views(__dirname + '/views', {
 
 // logger
 app.use(async (ctx, next) => {
-  await next()
-  log4js.info('log output')
+  await next().catch(err=>{
+    if(err.status == '401'){
+      ctx.status = 200;
+      ctx.body = util.fail('Token 认证失败',util.CODE.AUTH_ERROR);
+    }else{
+      throw err;
+    }
+  })
 })
-
+app.use(koajwt({secret:'imooc'}).unless({
+  path:[/^\/api\/users\/login/]
+}))
 // routes
 router.prefix('/api')
 router.use(users.routes(), users.allowedMethods())
