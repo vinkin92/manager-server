@@ -11,7 +11,7 @@ const userSchema = mongoose.Schema({
     "sex":Number,  // 性别 0：男 1：女
     "deptId":[],   //部门
     "job":String,  // 岗位
-    "State":{
+    "state":{
         type:Number,
         default:1
     },  //1:在职  2：离职 3：试用期  ,默认为1

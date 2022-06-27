@@ -40,9 +40,9 @@ router.get('/list', async (ctx)=>{
   const {page,skipIndex} = util.pager(ctx.request.query)
   let params = {}
   //如果有用户id，或有用户名称 或则用户状态，则赋值给 params ,用来通过这几个参数查询数据库并返回内容
-  if(userId)params.userId;
-  if(userName)params.userName;
-  if(state && state !='0')params.state;
+  if(userId)params.userId=userId;
+  if(userName)params.userName=userName;
+  if(state && state != 0)params.state=state;
   try {
     // 根据查询条件，获取数据库的内容，不返回 id 和 userPwd
     const query = User.find(params,{_id:0,userPwd:0})
@@ -59,4 +59,21 @@ router.get('/list', async (ctx)=>{
   }
 })
 
+
+
+/**
+ * 用户删除/批量删除，根据用户传递的id数组，来修改用户是否离职
+ */
+router.post('/delete',async(ctx,next)=>{
+  // 获取待更改的用户数组
+  const {userIds} = ctx.request.body
+  // 更新数据库中的数据，更新条件为 userId 字段,$in 表示在userIds 中的数组值，把state更新为2
+  const res =await User.updateMany({userId:{$in:userIds}},{state:2})
+  if(res.modifiedCount){
+    ctx.body = util.success(res,`共删除成功${res.modifiedCount}条数据`)
+    return;
+  }
+  ctx.body=util.fail('删除失败1111')
+
+})
 module.exports = router
