@@ -73,7 +73,32 @@ router.post('/delete',async(ctx,next)=>{
     ctx.body = util.success(res,`共删除成功${res.modifiedCount}条数据`)
     return;
   }
-  ctx.body=util.fail('删除失败1111')
+  ctx.body=util.fail('删除失败')
 
+})
+
+/**
+ * 用户新增
+ */
+router.post('/operate',async (ctx)=>{
+  const {userId,userName,userEmail,mobile,job,state,roleList,deptId,action} = ctx.request.body
+  if(action == 'add'){
+    if(!userName || !userEmail || !deptId){
+      ctx.body = util.fail('参数错误',util.CODE.PARAM_ERROR)
+      return
+    }
+  }else{
+    if(!deptId){
+      ctx.body = util.fail('部门不能为空',util.CODE.PARAM_ERROR)
+      return;
+    }
+    const res =await User.findOneAndUpdate({userId},{mobile,job,state,roleList,deptId})
+    console.log(res,'res======<')
+    if(res){
+      ctx.body = util.success(res,'更新成功')
+      return
+    }
+    ctx.body = util.fail('更新失败')
+  }
 })
 module.exports = router
