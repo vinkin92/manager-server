@@ -3,8 +3,10 @@
  */
 const router = require('koa-router')()
 const User = require('./../models/userSchema.js')
+const Counter = require('./../models/counterSchema.js')
 const util = require('./../utils/util.js')
 const jwt = require('jsonwebtoken')
+const md5 = require('md5')
 // 二级路由
 router.prefix('/users')
 
@@ -82,10 +84,31 @@ router.post('/delete',async(ctx,next)=>{
  */
 router.post('/operate',async (ctx)=>{
   const {userId,userName,userEmail,mobile,job,state,roleList,deptId,action} = ctx.request.body
+  //如果点击的是添加用户
   if(action == 'add'){
     if(!userName || !userEmail || !deptId){
       ctx.body = util.fail('参数错误',util.CODE.PARAM_ERROR)
       return
+    }
+    // 查找
+    // new：true 表示把最新的值返回回来
+    const doc = await Counter.findOneAndUpdate({_id:'userId'},{$inc:{sequence_value:1}},{new:true})
+    const res = await User.findOne({$or:[{userName},{userEmail}]},'_id userName userEmail')
+    if(res){
+      ctx.body = util.fail(`系统用户重复${res.userName}-${res.userEmail}`)
+    }else {
+      try {
+        const  user = new User({
+          userId:doc.sequence_value,
+          role:1,
+          userPwd:md5('123456'),
+          userName,userEmail,mobile,job,state,roleList,deptId
+        })
+        user.save()
+        ctx.body = util.success({code:0},'用户创建成功')
+      } catch (error) {
+        ctx.body = util.fail(`用户创建失败:${error}`)
+      }
     }
   }else{
     if(!deptId){
@@ -93,7 +116,6 @@ router.post('/operate',async (ctx)=>{
       return;
     }
     const res =await User.findOneAndUpdate({userId},{mobile,job,state,roleList,deptId})
-    console.log(res,'res======<')
     if(res){
       ctx.body = util.success(res,'更新成功')
       return
